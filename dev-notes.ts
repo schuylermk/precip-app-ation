@@ -63,6 +63,14 @@ Component Responsibilities:
   - Handles API key usage, request formatting, error handling.
 
 ===========================================
+New Features:
+-------------------------------------------
+- Flexible input parsing for coordinates.
+- Place name search with geocoding API.
+- Autocomplete suggestions for place names.
+- Improved error handling and user feedback.
+
+===========================================
 Later Expansion (Phase 2+ Ideas):
 - Add favorites list.
 - Compare multiple locations.
