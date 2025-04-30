@@ -3,6 +3,11 @@
 MVP Project: Precipitation History App
 ===========================================
 
+EOD Report: 
+- Need to check .m.k api_key with curl to see if it has been activated.
+- Possibly need to switch to a different API for historical data.
+- Updated a few components and added a new feature to fetch historical precipitation data.
+
 Core Idea:
 - Users can input/select a location.
 - App fetches historical precipitation data for 1-day, 3-day, 7-day, 14-day, etc.

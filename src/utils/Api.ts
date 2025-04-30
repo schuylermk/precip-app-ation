@@ -1,6 +1,9 @@
-const API_KEY = "your-api-key-here"; // Replace with your API key
+import { GeocodingPlace } from "./types";
+import { GeocodingPlaceSchema, PrecipitationResponseSchema } from "./validation";
+
+const API_KEY = import.meta.env.VITE_PRECIP_APP_API_KEY || "";
 const BASE_URL = "https://api.openweathermap.org/data/2.5/onecall/timemachine";
-const GEOCODING_URL = "https://api.opencagedata.com/geocode/v1/json";
+const GEOCODING_URL = "http://api.openweathermap.org/geo/1.0/direct";
 
 /**
  * Fetch historical precipitation data for a given location and date.
@@ -14,15 +17,31 @@ export async function fetchPrecipitationData(
   lon: number,
   date: number
 ): Promise<number[]> {
-  console.log(`Fetching data for lat: ${lat}, lon: ${lon}, date: ${date}`);
+  const url = new URL(BASE_URL);
+  url.searchParams.append("lat", lat.toString());
+  url.searchParams.append("lon", lon.toString());
+  url.searchParams.append("dt", date.toString());
+  url.searchParams.append("appid", API_KEY);
 
-  // Simulate dummy data: 24 hours of random precipitation values (in mm)
-  const dummyData = Array.from({ length: 24 }, () => Math.random() * 10);
+  console.log(`Fetching precipitation data from: ${url.origin}${url.pathname}`);
 
-  // Simulate a network delay
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(dummyData), 500);
-  });
+  try {
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    const validatedData = PrecipitationResponseSchema.parse(data);
+
+    // Extract hourly precipitation data
+    const precipitation = validatedData.hourly?.map((hour) => hour.rain?.["1h"] || 0) || [];
+
+    return precipitation;
+  } catch (error) {
+    console.error("Error fetching precipitation data:", error);
+    throw error;
+  }
 }
 
 /**
@@ -30,27 +49,35 @@ export async function fetchPrecipitationData(
  * @param query The place name query.
  * @returns Array of suggested place names with coordinates.
  */
-export async function fetchGeocodingSuggestions(query: string): Promise<{ formatted: string; lat: number; lon: number }[]> {
-  console.log(`Fetching geocoding suggestions for query: "${query}"`);
+type GeocodingPlaceWithFormatted = GeocodingPlace & {
+  formatted: string;
+};
 
-  // Simulate dummy geocoding suggestions
-  const dummySuggestions = [
-    { formatted: "San Francisco, CA, USA", lat: 37.7749, lon: -122.4194 },
-    { formatted: "San Jose, CA, USA", lat: 37.3382, lon: -121.8863 },
-    { formatted: "Santa Clara, CA, USA", lat: 37.3541, lon: -121.9552 },
-    { formatted: "Sacramento, CA, USA", lat: 38.5816, lon: -121.4944 },
-    { formatted: "Sunnyvale, CA, USA", lat: 37.3688, lon: -122.0363 },
-  ];
+export async function fetchGeocodingSuggestions(query: string): Promise<GeocodingPlaceWithFormatted[]> {
+  const url = new URL(GEOCODING_URL);
+  url.searchParams.append("q", query);
+  url.searchParams.append("limit", "5");
+  url.searchParams.append("appid", API_KEY);
 
-  // Filter dummy suggestions based on the query
-  const filteredSuggestions = dummySuggestions.filter((suggestion) =>
-    suggestion.formatted.toLowerCase().includes(query.toLowerCase())
-  );
+  console.log(`Fetching geocoding suggestions from: ${url.origin}${url.pathname}`);
 
-  // Simulate a network delay
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(filteredSuggestions), 300);
-  });
+  try {
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      throw new Error(`Geocoding API request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    const validatedData = GeocodingPlaceSchema.parse(data);
+
+    return validatedData.map((place) => ({
+      ...place,
+      formatted: `${place.name}, ${place.state || ""}, ${place.country}`.trim(),
+    }));
+  } catch (error) {
+    console.error("Error fetching geocoding suggestions:", error);
+    throw error;
+  }
 }
 
 /**

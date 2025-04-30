@@ -29,7 +29,7 @@ export default function PrecipChart({ data }: PrecipChartProps) {
     datasets: [
       {
         label: "Precipitation (mm)",
-        data: data,
+        data: Array.from({ length: 24 }, (_, i) => data[i] || 0), // Fill missing hours with 0
         backgroundColor: "rgba(54, 162, 235, 0.6)", // Blue bars
         borderColor: "rgba(54, 162, 235, 1)",
         borderWidth: 1,
